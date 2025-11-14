@@ -1,50 +1,42 @@
-import Busboy from "busboy";
-import FormData from "form-data";
-import fetch from "node-fetch";
-
-export const config = {
-  api: {
-    bodyParser: false,
-  },
+// Disable body parsing for multipart
+module.exports.config = {
+  api: { bodyParser: false }
 };
 
-function parseMultipart(req: any) {
+const Busboy = require("busboy");
+const FormData = require("form-data");
+const fetch = require("node-fetch");
+
+function parseMultipart(req) {
   return new Promise((resolve, reject) => {
     const bb = Busboy({ headers: req.headers });
-    const bufs: Buffer[] = [];
+    const chunks = [];
+
     let filename = "audio.webm";
     let contentType = "audio/webm";
 
-    bb.on("file", (_name, file, info) => {
-      filename =
-        info && (info.filename || info.filename === "")
-          ? info.filename
-          : filename;
-      contentType =
-        info && (info.mimeType || info.mimeType === "")
-          ? info.mimeType
-          : contentType;
-
-      file.on("data", (d) => bufs.push(d));
+    bb.on("file", (name, file, info) => {
+      filename = info?.filename || filename;
+      contentType = info?.mimeType || contentType;
+      file.on("data", (chunk) => chunks.push(chunk));
     });
 
-    bb.on("error", reject);
-
     bb.on("finish", () => {
-      if (bufs.length === 0) return reject(new Error("No file uploaded"));
+      if (chunks.length === 0) return reject(new Error("No file uploaded"));
       resolve({
-        buffer: Buffer.concat(bufs),
+        buffer: Buffer.concat(chunks),
         filename,
-        contentType,
+        contentType
       });
     });
 
+    bb.on("error", reject);
     req.pipe(bb);
   });
 }
 
-export default async function handler(req: any, res: any) {
-  // CORS for browser uploads
+module.exports = async function handler(req, res) {
+  // CORS
   if (req.method === "OPTIONS") {
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
@@ -53,7 +45,7 @@ export default async function handler(req: any, res: any) {
   }
 
   if (req.method !== "POST") {
-    return res.status(405).send("Method not allowed");
+    return res.status(405).send("Method Not Allowed");
   }
 
   try {
@@ -67,25 +59,23 @@ export default async function handler(req: any, res: any) {
     const r = await fetch("https://api.openai.com/v1/audio/transcriptions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
       },
-      body: form,
+      body: form
     });
 
     const txt = await r.text();
-
     if (!r.ok) {
       res.setHeader("Access-Control-Allow-Origin", "*");
       return res.status(r.status).send(txt);
     }
 
     const data = JSON.parse(txt);
+
     res.setHeader("Access-Control-Allow-Origin", "*");
     return res.status(200).json({ text: data.text });
-  } catch (e: any) {
+  } catch (err) {
     res.setHeader("Access-Control-Allow-Origin", "*");
-    return res
-      .status(500)
-      .send(e?.message ?? "Transcription failed");
+    return res.status(500).send(err.message || "Transcription failed");
   }
-}
+};
