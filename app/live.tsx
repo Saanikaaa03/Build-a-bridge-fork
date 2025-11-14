@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { ActivityIndicator, Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 const TRANSCRIBE_URL =
-  "https://build-a-bridge-fork-jdhyup1fh-saanikas-projects-7573c31b.vercel.app/api/transcribe";
+  "https://build-a-bridge-fork.vercel.app/api/transcribe";
 
 export default function Live() {
   const [transcript, setTranscript] = useState("");
