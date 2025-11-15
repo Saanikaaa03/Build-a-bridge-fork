@@ -53,7 +53,7 @@ module.exports = async function handler(req, res) {
 
     const form = new FormData();
     form.append("file", buffer, { filename, contentType });
-    form.append("model", "gpt-4o-mini-transcribe");
+    form.append("model", "gpt-4o-transcribe");  // recommended
     form.append("language", "en");
 
     const r = await fetch("https://api.openai.com/v1/audio/transcriptions", {

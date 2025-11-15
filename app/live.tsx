@@ -11,7 +11,7 @@ export default function Live() {
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
-  const streamRef = useRef<MediaStream | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);6
 
   const startRecording = async () => {
     if (isRecording) return;
